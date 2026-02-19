@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Perkalian Metode Jepang/Garis</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Basic reset for now, full styling in style.css */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; }
+        canvas { border: 2px solid #333; margin: 20px auto; display: block; background-color: #fff; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Game Perkalian Metode Jepang/Garis</h1>
+        <p>Belajar perkalian dengan cara visual yang asik!</p>
+    </header>
+
+    <main>
+        <div class="mode-selection">
+            <button id="btn-tutorial" class="mode-btn active">Tutorial</button>
+            <button id="btn-practice" class="mode-btn">Latihan</button>
+        </div>
+
+        <div id="game-container">
+            <h2 id="current-mode">Mode: Tutorial</h2>
+            <p id="instruction">Perhatikan bagaimana garis-garis ini membentuk perkalian.</p>
+            
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div id="controls-area">
+                <!-- Tutorial Controls -->
+                <div id="tutorial-controls">
+                    <button id="btn-next-step">Langkah Selanjutnya</button>
+                    <button id="btn-restart-tutorial">Ulangi Tutorial</button>
+                </div>
+
+                <!-- Practice Controls -->
+                <div id="practice-controls" class="hidden">
+                    <div class="input-group">
+                        <label for="answer-input">Jawaban Kamu:</label>
+                        <input type="number" id="answer-input" placeholder="?">
+                        <button id="btn-check">Cek Jawaban</button>
+                    </div>
+                    <button id="btn-new-problem" class="secondary-btn">Soal Baru</button>
+                    <p id="feedback-msg"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Dibuat dengan ❤️ untuk belajar matematika.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
