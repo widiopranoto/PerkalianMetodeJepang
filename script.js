@@ -2,7 +2,7 @@
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const LINE_SPACING = 30;
-const GROUP_SPACING = 150;
+const GROUP_SPACING = 100;
 
 // Bright Palette
 const COLORS = {
@@ -18,7 +18,7 @@ const COLORS = {
 };
 
 // Google Apps Script URL (Placeholder - User must replace this)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxYr-NgaAi3aHOlDNVkzYM0dwqV6bjYNy_DMRJPjjH4lYTyPtwpR8qrf5z2SdB9UBt4/exec'; // TODO: Paste your Web App URL here
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxA1xFg1SBrSvx_CmOTtPIIXt-ouYrEkyvswkmHOHmXsfLz7_HIlr60o0VJvcxIAPYk/exec'; // TODO: Paste your Web App URL here
 
 // Sound Effects
 const SOUNDS = {
@@ -350,31 +350,95 @@ function calculateGeometry(n1, n2) {
     let linesB = [];
     let intersections = [];
 
-    // Same geometry logic as before
-    d1.forEach((count, groupIdx) => {
-        let groupOffset = (groupIdx === 0) ? -GROUP_SPACING/2 : GROUP_SPACING/2;
-        if (d1.length === 1) groupOffset = 0;
-        let startC = groupOffset - ((count - 1) * LINE_SPACING) / 2;
+    // --- CENTERING FIX ---
+    // We first generate lines relative to an arbitrary center, then calculate the 
+    // bounding box center of all intersections, and finally shift everything.
+
+    // 1. Generate Raw Lines (Centered relative to group structure)
+    // Use the same logic as before to generate relative positions.
+    
+    let rawLinesA = [];
+    let rawLinesB = [];
+    
+    // Lines A (Slope -1): Tens (Left/Top) -> Units (Right/Bottom)
+    let groupOffsetA = ((d1.length - 1) * GROUP_SPACING) / 2;
+    d1.forEach((count, idx) => {
+        let groupBase = -groupOffsetA + (idx * GROUP_SPACING);
+        let startC = groupBase - ((count - 1) * LINE_SPACING) / 2;
         for (let i = 0; i < count; i++) {
-            linesA.push({ type: 'A', group: groupIdx, C: startC + (i * LINE_SPACING) });
+            rawLinesA.push({ type: 'A', group: idx, C: startC + (i * LINE_SPACING) });
         }
     });
 
-    d2.forEach((count, groupIdx) => {
-        let groupOffset = (groupIdx === 0) ? GROUP_SPACING/2 : -GROUP_SPACING/2;
-        if (d2.length === 1) groupOffset = 0;
-        let startC = groupOffset - ((count - 1) * LINE_SPACING) / 2;
+    // Lines B (Slope 1): Tens (Top/Right) -> Units (Bottom/Left)
+    // Note: To cross A correctly, B groups usually go in reverse visual order or opposite offset.
+    // Previous working logic: Tens (+Offset), Units (-Offset).
+    let groupOffsetB = ((d2.length - 1) * GROUP_SPACING) / 2;
+    d2.forEach((count, idx) => {
+        let groupBase = groupOffsetB - (idx * GROUP_SPACING);
+        let startC = groupBase - ((count - 1) * LINE_SPACING) / 2;
         for (let i = 0; i < count; i++) {
-            linesB.push({ type: 'B', group: groupIdx, C: startC + (i * LINE_SPACING) });
+            rawLinesB.push({ type: 'B', group: idx, C: startC + (i * LINE_SPACING) });
         }
     });
 
+    // 2. Calculate Raw Intersections to find the Center of Mass
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    
+    // Temporary calculation to find bounds
+    rawLinesA.forEach(lA => {
+        rawLinesB.forEach(lB => {
+            // Intersection of y = -x + Ca and y = x + Cb
+            let x = (lA.C - lB.C) / 2;
+            let y = (lA.C + lB.C) / 2;
+            
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        });
+    });
+    
+    // Calculate the center of the bounding box of all intersections
+    let centerX = (minX + maxX) / 2;
+    let centerY = (minY + maxY) / 2;
+    
+    // 3. Apply Shift to Center on Canvas (cx, cy)
+    // We want (centerX, centerY) to be at (cx, cy).
+    // So we shift every point by (cx - centerX, cy - centerY).
+    // For lines defined by C, shifting x by dx and y by dy changes C.
+    // Line A (y = -x + C): New Y = -New X + New C
+    // (y - dy) = -(x - dx) + C => y = -x + dx + dy + C. New C = C + dx + dy.
+    // Line B (y = x + C): New Y = New X + New C
+    // (y - dy) = (x - dx) + C => y = x - dx + dy + C. New C = C - dx + dy.
+    
+    let shiftX = -centerX; // We shift relative to 0,0 first
+    let shiftY = -centerY;
+    
+    // Apply shifts to get final lines relative to (0,0) center
+    linesA = rawLinesA.map(l => ({
+        ...l,
+        C: l.C + shiftX + shiftY
+    }));
+    
+    linesB = rawLinesB.map(l => ({
+        ...l,
+        C: l.C - shiftX + shiftY
+    }));
+    
+    // 4. Calculate Final Intersections
     linesA.forEach(lA => {
         linesB.forEach(lB => {
             let x = (lA.C - lB.C) / 2;
             let y = (lA.C + lB.C) / 2;
             let zone = lA.group + lB.group;
-            intersections.push({ x: cx + x, y: cy + y, groupA: lA.group, groupB: lB.group, zone: zone });
+            intersections.push({ 
+                x: cx + x, // Add canvas center offset finally
+                y: cy + y, 
+                groupA: lA.group, 
+                groupB: lB.group, 
+                zone: zone 
+            });
         });
     });
     
@@ -439,7 +503,7 @@ function render() {
     const { linesA, linesB, intersections } = gameState.geometry;
     const cx = CANVAS_WIDTH / 2;
     const cy = CANVAS_HEIGHT / 2;
-    const len = 600;
+    const len = 1000; // Increased length to ensure lines span screen
 
     // Draw Title
     ctx.font = "bold 40px 'Poppins'";
@@ -477,8 +541,32 @@ function render() {
         }
     }
 
-    if (showA) linesA.forEach(l => drawLine(cx - len, -(cx - len) + l.C, cx + len, -(cx + len) + l.C, COLORS.lineA));
-    if (showB) linesB.forEach(l => drawLine(cx - len, cx - len + l.C, cx + len, cx + len + l.C, COLORS.lineB));
+    // DRAW LINES FIX: 
+    // l.C is relative to mathematical (0,0).
+    // Canvas center is (cx, cy).
+    // Line A (y_rel = -x_rel + C_rel):
+    // Screen Y = -Screen X + (cy + cx + C_rel)
+    if (showA) {
+        linesA.forEach(l => {
+            let offset = cy + cx + l.C;
+            // x1 = cx - len -> y1 = -(cx - len) + offset
+            let y1 = -(cx - len) + offset;
+            let y2 = -(cx + len) + offset;
+            drawLine(cx - len, y1, cx + len, y2, COLORS.lineA);
+        });
+    }
+
+    // Line B (y_rel = x_rel + C_rel):
+    // Screen Y = Screen X + (cy - cx + C_rel)
+    if (showB) {
+        linesB.forEach(l => {
+            let offset = cy - cx + l.C;
+            // x1 = cx - len -> y1 = (cx - len) + offset
+            let y1 = (cx - len) + offset;
+            let y2 = (cx + len) + offset;
+            drawLine(cx - len, y1, cx + len, y2, COLORS.lineB);
+        });
+    }
 
     if (showDots) {
         const zones = {};
