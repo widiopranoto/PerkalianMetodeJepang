@@ -1,175 +1,88 @@
-:root {
-    --bg-color: #f0f4f8;
-    --primary-color: #6c5ce7;
-    --secondary-color: #00cec9;
-    --accent-color: #fd79a8;
-    --text-color: #2d3436;
-    --canvas-bg: #ffffff;
-    --btn-hover: #a29bfe;
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0f172a; 
+}
+::-webkit-scrollbar-thumb {
+    background: #3b82f6; 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #60a5fa; 
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
+    background-color: #0f172a; /* Fallback */
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
 }
 
-header {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-h1 {
-    font-size: 2.5rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-}
-
-h2 {
-    color: var(--secondary-color);
-}
-
-.mode-selection {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.mode-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 25px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    background-color: #dfe6e9;
-    color: var(--text-color);
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.mode-btn.active, .mode-btn:hover {
-    background-color: var(--primary-color);
-    color: white;
-    transform: translateY(-2px);
-}
-
-#game-container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    width: 100%;
-    max-width: 900px;
-    text-align: center;
-}
-
+/* Canvas Styling */
 canvas {
-    border: 3px solid var(--text-color);
-    border-radius: 10px;
-    background-color: var(--canvas-bg);
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
-    margin: 20px auto;
-    max-width: 100%; /* Responsive canvas */
+    image-rendering: pixelated; /* Sharp lines */
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+    transition: box-shadow 0.3s ease;
 }
 
-#controls-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin-top: 20px;
+canvas:hover {
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
 }
 
-#tutorial-controls, #practice-controls {
-    display: flex;
-    flex-direction: column; /* Stack buttons on smaller screens */
-    align-items: center;
-    gap: 10px;
-    width: 100%;
+/* Neon Text Effect Utility Class (if not using Tailwind plugin) */
+.text-neon-blue {
+    text-shadow: 0 0 5px #00f3ff, 0 0 10px #00f3ff;
 }
 
-button {
-    padding: 12px 24px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    background-color: var(--secondary-color);
-    color: white;
-    font-weight: bold;
+.text-neon-pink {
+    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
 }
 
-button:hover {
-    background-color: #00b894; /* Darker shade of secondary */
+/* Button Glow Animation */
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(0, 243, 255, 0.8); }
 }
 
-button.secondary-btn {
-    background-color: #fab1a0;
+.animate-glow {
+    animation: pulse-glow 2s infinite;
 }
 
-button.secondary-btn:hover {
-    background-color: #e17055;
-}
-
-input[type="number"] {
-    padding: 10px;
-    font-size: 1.2rem;
-    border: 2px solid #b2bec3;
-    border-radius: 8px;
-    width: 100px;
-    text-align: center;
-}
-
-input[type="number"]:focus {
-    border-color: var(--primary-color);
+/* Input Focus Ring Customization */
+input:focus {
     outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 0, 255, 0.3);
 }
 
-.input-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
-}
-
+/* Hidden Utility */
 .hidden {
     display: none !important;
 }
 
-#feedback-msg {
-    font-weight: bold;
-    font-size: 1.2rem;
-    margin-top: 10px;
-    min-height: 1.5em; /* Prevent layout shift */
+/* Mode Button Active State (Custom handling for JS toggle) */
+.mode-btn-active {
+    background-color: rgba(0, 243, 255, 0.1) !important;
+    border-color: #00f3ff !important;
+    color: #00f3ff !important;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
 }
 
-.correct {
-    color: #00b894;
+/* Tutorial/Practice Button Override */
+#btn-tutorial.active {
+    background-color: #00f3ff;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+    border-color: #00f3ff;
 }
 
-.incorrect {
-    color: #d63031;
-}
-
-footer {
-    margin-top: auto;
-    padding: 20px;
-    color: #636e72;
-    font-size: 0.9rem;
-}
-
-/* Responsive adjustments */
-@media (min-width: 600px) {
-    #tutorial-controls, #practice-controls {
-        flex-direction: row; /* Side by side on larger screens */
-        justify-content: center;
-    }
+#btn-practice.active {
+    background-color: #ff00ff;
+    color: #000;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+    border-color: #ff00ff;
 }
