@@ -1,62 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Nunito:wght@400;700&display=swap');
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #0f172a; 
+    background: #f0f9ff; 
 }
 ::-webkit-scrollbar-thumb {
-    background: #3b82f6; 
+    background: #0ea5e9; 
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #60a5fa; 
+    background: #0284c7; 
 }
 
 body {
-    background-color: #0f172a; /* Fallback */
-    background-image: 
-        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    background-color: #f8fafc; /* Slate-50 */
+    color: #1e293b; /* Slate-800 */
 }
 
 /* Canvas Styling */
 canvas {
     image-rendering: pixelated; /* Sharp lines */
-    box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
-    transition: box-shadow 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 0.5rem;
+    transition: transform 0.3s ease;
 }
 
 canvas:hover {
-    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+    transform: scale(1.01);
 }
 
-/* Neon Text Effect Utility Class (if not using Tailwind plugin) */
-.text-neon-blue {
-    text-shadow: 0 0 5px #00f3ff, 0 0 10px #00f3ff;
+/* Animations */
+@keyframes bounce-slow {
+    0%, 100% { transform: translateY(-5%); }
+    50% { transform: translateY(0); }
 }
 
-.text-neon-pink {
-    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
-}
-
-/* Button Glow Animation */
-@keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
-    50% { box-shadow: 0 0 20px rgba(0, 243, 255, 0.8); }
-}
-
-.animate-glow {
-    animation: pulse-glow 2s infinite;
+.animate-bounce-slow {
+    animation: bounce-slow 2s infinite;
 }
 
 /* Input Focus Ring Customization */
 input:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(255, 0, 255, 0.3);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3); /* Sky-500 ring */
 }
 
 /* Hidden Utility */
@@ -64,25 +53,33 @@ input:focus {
     display: none !important;
 }
 
-/* Mode Button Active State (Custom handling for JS toggle) */
-.mode-btn-active {
-    background-color: rgba(0, 243, 255, 0.1) !important;
-    border-color: #00f3ff !important;
-    color: #00f3ff !important;
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+/* Level Button States */
+.level-btn {
+    transition: all 0.3s ease;
 }
 
-/* Tutorial/Practice Button Override */
-#btn-tutorial.active {
-    background-color: #00f3ff;
-    color: #000;
-    box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
-    border-color: #00f3ff;
+.level-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-#btn-practice.active {
-    background-color: #ff00ff;
-    color: #000;
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
-    border-color: #ff00ff;
+.level-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.level-locked {
+    background-color: #e2e8f0; /* Slate-200 */
+    color: #94a3b8; /* Slate-400 */
+    cursor: not-allowed;
+}
+
+/* Pulse effect for unlocked/current level */
+@keyframes pulse-ring {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+}
+
+.level-active {
+    animation: pulse-ring 2s infinite;
 }
