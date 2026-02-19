@@ -149,7 +149,7 @@ function handleLogin() {
     // Update UI
     document.getElementById('hud-username').innerText = username;
     document.getElementById('avatar-initial').innerText = username.charAt(0).toUpperCase();
-    document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
+    document.getElementById('login-overlay').classList.add('hidden');
 
     playSound('start');
 
@@ -166,7 +166,7 @@ function showLevelSelection() {
 }
 
 function renderLevelMap() {
-    const container = document.querySelector('#level-selection-screen .grid');
+    const container = document.querySelector('#level-selection-screen .level-grid');
     container.innerHTML = ''; // Clear existing
 
     LEVEL_CONFIG.forEach(level => {
@@ -174,36 +174,23 @@ function renderLevelMap() {
         const btn = document.createElement('button');
 
         // Base classes
-        let classes = "level-btn p-6 rounded-xl shadow-md border-2 flex flex-col items-center justify-center h-48 w-full relative group transition-all duration-300 ";
+        btn.className = "level-btn";
 
         if (isUnlocked) {
-            classes += "bg-white border-primary cursor-pointer hover:border-secondary";
             btn.onclick = () => selectLevel(level.id);
         } else {
-            classes += "level-locked border-slate-300";
             btn.disabled = true;
         }
 
-        btn.className = classes;
-
         // Content
         let content = `
-            <span class="text-3xl font-bold ${isUnlocked ? 'text-primary' : 'text-slate-400'} mb-2">Level ${level.id}</span>
-            <span class="text-sm ${isUnlocked ? 'text-slate-600' : 'text-slate-400'} font-semibold">${level.title}</span>
-            <p class="text-xs ${isUnlocked ? 'text-slate-400' : 'text-slate-400'} mt-2 px-2">${level.description}</p>
+            <h3>Level ${level.id}</h3>
+            <p><strong>${level.title}</strong></p>
+            <p>${level.description}</p>
         `;
 
-        // Lock Icon if locked
         if (!isUnlocked) {
-            content += `
-                <div class="absolute inset-0 flex items-center justify-center bg-slate-200/50 rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-            `;
-        } else {
-             content += `<div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 rounded-xl transition-all"></div>`;
+            content += `<div class="locked-overlay">🔒</div>`;
         }
 
         btn.innerHTML = content;
@@ -228,17 +215,11 @@ function selectLevel(levelId) {
 function updateHUD() {
     const user = gameState.user;
 
-    // Find next level target
-    // We assume levels are sequential. Current Level Target is the one we are working towards.
-    // Actually, XP is global. Let's find the max target of the highest unlocked level + 1?
-    // Simplified: Just show global XP and next target based on LEVEL_CONFIG.
-
-    // Determine current target based on highest unlocked level
     const maxUnlocked = Math.max(...user.unlockedLevels);
     const nextLevelConfig = LEVEL_CONFIG.find(l => l.id === maxUnlocked + 1);
     const currentLevelConfig = LEVEL_CONFIG.find(l => l.id === maxUnlocked);
 
-    let xpTarget = nextLevelConfig ? nextLevelConfig.targetXP : (currentLevelConfig.targetXP * 1.5); // Fallback if max level
+    let xpTarget = nextLevelConfig ? nextLevelConfig.targetXP : (currentLevelConfig.targetXP * 1.5);
 
     document.getElementById('hud-xp-current').innerText = user.xp;
     document.getElementById('hud-xp-next').innerText = xpTarget;
@@ -306,27 +287,28 @@ function setMode(mode) {
     // UI Styling update
     const btnTut = document.getElementById('btn-tutorial');
     const btnPrac = document.getElementById('btn-practice');
+    const title = document.getElementById('current-mode-title');
 
     if (mode === 'tutorial') {
-        btnTut.className = "flex-1 py-3 rounded-xl font-bold transition-all duration-300 bg-primary/10 text-primary border border-primary active-mode hover:bg-primary hover:text-white";
-        btnPrac.className = "flex-1 py-3 rounded-xl font-bold transition-all duration-300 text-textMuted hover:text-secondary hover:bg-secondary/10 border border-transparent hover:border-secondary";
+        btnTut.className = "mode-btn active";
+        btnPrac.className = "mode-btn";
 
         document.getElementById('tutorial-controls').classList.remove('hidden');
         document.getElementById('practice-controls').classList.add('hidden');
 
-        document.getElementById('current-mode-title').innerText = "Mode: Tutorial";
-        document.getElementById('current-mode-title').className = "text-3xl font-poppins font-bold text-primary";
+        title.innerText = "Mode: Tutorial";
+        title.style.color = "var(--primary)";
 
         resetTutorial();
     } else {
-        btnTut.className = "flex-1 py-3 rounded-xl font-bold transition-all duration-300 text-textMuted hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary";
-        btnPrac.className = "flex-1 py-3 rounded-xl font-bold transition-all duration-300 bg-secondary/10 text-secondary border border-secondary active-mode hover:bg-secondary hover:text-white";
+        btnTut.className = "mode-btn";
+        btnPrac.className = "mode-btn active";
 
         document.getElementById('tutorial-controls').classList.add('hidden');
         document.getElementById('practice-controls').classList.remove('hidden');
 
-        document.getElementById('current-mode-title').innerText = "Mode: Latihan";
-        document.getElementById('current-mode-title').className = "text-3xl font-poppins font-bold text-secondary";
+        title.innerText = "Mode: Latihan";
+        title.style.color = "var(--secondary)";
         document.getElementById('instruction-text').innerText = "Hitung titik potongnya dan masukkan jawabanmu!";
 
         newPracticeProblem();
@@ -351,16 +333,12 @@ function calculateGeometry(n1, n2) {
     let intersections = [];
 
     // --- CENTERING FIX ---
-    // We first generate lines relative to an arbitrary center, then calculate the
-    // bounding box center of all intersections, and finally shift everything.
 
     // 1. Generate Raw Lines (Centered relative to group structure)
-    // Use the same logic as before to generate relative positions.
-
     let rawLinesA = [];
     let rawLinesB = [];
 
-    // Lines A (Slope -1): Tens (Left/Top) -> Units (Right/Bottom)
+    // Lines A (Slope -1)
     let groupOffsetA = ((d1.length - 1) * GROUP_SPACING) / 2;
     d1.forEach((count, idx) => {
         let groupBase = -groupOffsetA + (idx * GROUP_SPACING);
@@ -370,9 +348,7 @@ function calculateGeometry(n1, n2) {
         }
     });
 
-    // Lines B (Slope 1): Tens (Top/Right) -> Units (Bottom/Left)
-    // Note: To cross A correctly, B groups usually go in reverse visual order or opposite offset.
-    // Previous working logic: Tens (+Offset), Units (-Offset).
+    // Lines B (Slope 1)
     let groupOffsetB = ((d2.length - 1) * GROUP_SPACING) / 2;
     d2.forEach((count, idx) => {
         let groupBase = groupOffsetB - (idx * GROUP_SPACING);
@@ -385,7 +361,6 @@ function calculateGeometry(n1, n2) {
     // 2. Calculate Raw Intersections to find the Center of Mass
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
-    // Temporary calculation to find bounds
     rawLinesA.forEach(lA => {
         rawLinesB.forEach(lB => {
             // Intersection of y = -x + Ca and y = x + Cb
@@ -404,15 +379,7 @@ function calculateGeometry(n1, n2) {
     let centerY = (minY + maxY) / 2;
 
     // 3. Apply Shift to Center on Canvas (cx, cy)
-    // We want (centerX, centerY) to be at (cx, cy).
-    // So we shift every point by (cx - centerX, cy - centerY).
-    // For lines defined by C, shifting x by dx and y by dy changes C.
-    // Line A (y = -x + C): New Y = -New X + New C
-    // (y - dy) = -(x - dx) + C => y = -x + dx + dy + C. New C = C + dx + dy.
-    // Line B (y = x + C): New Y = New X + New C
-    // (y - dy) = (x - dx) + C => y = x - dx + dy + C. New C = C - dx + dy.
-
-    let shiftX = -centerX; // We shift relative to 0,0 first
+    let shiftX = -centerX;
     let shiftY = -centerY;
 
     // Apply shifts to get final lines relative to (0,0) center
@@ -503,7 +470,7 @@ function render() {
     const { linesA, linesB, intersections } = gameState.geometry;
     const cx = CANVAS_WIDTH / 2;
     const cy = CANVAS_HEIGHT / 2;
-    const len = 1000; // Increased length to ensure lines span screen
+    const len = 1000; // Increased length
 
     // Draw Title
     ctx.font = "bold 40px 'Poppins'";
@@ -527,13 +494,11 @@ function render() {
         else if (s === 6) { activeZone = 0; }
         else if (s === 7) { showFinal = true; }
 
-        // Specific overrides for Level 2 (Carry Over)
         if (gameState.currentLevelId === 2) {
              if (s === 4) labelOverride = "12 (Simpan 1)";
              if (s === 5) labelOverride = "7 + 1 = 8";
              if (s === 6) labelOverride = "1";
         }
-        // Specific overrides for Level 1 (No Carry Over)
         if (gameState.currentLevelId === 1) {
              if (s === 4) labelOverride = "6";
              if (s === 5) labelOverride = "5";
@@ -665,7 +630,7 @@ function checkAnswer() {
 
     if (val === correct) {
         feedback.innerText = "BENAR! 🎉 +25 XP";
-        feedback.className = "text-xl font-bold h-8 mb-4 text-center w-full text-success";
+        feedback.className = "text-success";
         playSound('correct');
         addXP(25);
 
@@ -673,7 +638,7 @@ function checkAnswer() {
         document.getElementById('btn-new-problem').classList.remove('hidden');
     } else {
         feedback.innerText = "Salah, coba lagi!";
-        feedback.className = "text-xl font-bold h-8 mb-4 text-center w-full text-danger";
+        feedback.className = "text-danger";
         playSound('wrong');
     }
 }
