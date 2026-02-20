@@ -23,37 +23,48 @@ function doPost(e) {
     try {
       const existingData = sheet.getDataRange().getValues();
       let rowIndex = -1;
+      let existingLevel = 1;
+      let existingXP = 0;
+      let existingScore = 0;
 
       // Search for username (skip header)
       for (let i = 1; i < existingData.length; i++) {
         if (existingData[i][1] === username) {
           rowIndex = i + 1; // 1-based index
+          // Retrieve current values to compare
+          existingLevel = Number(existingData[i][2]) || 1;
+          existingXP = Number(existingData[i][3]) || 0;
+          existingScore = Number(existingData[i][4]) || 0;
           break;
         }
       }
 
       const timestamp = new Date();
 
+      // Determine new values (Prevent regression)
+      // Only update if new value is greater or equal
+      const newLevel = Math.max(existingLevel, Number(data.level) || 1);
+      const newXP = Math.max(existingXP, Number(data.xp) || 0);
+      const newScore = Math.max(existingScore, Number(data.score) || 0);
+
       if (rowIndex > 0) {
         // Update existing row (Level, XP, Score, LastUpdated)
         sheet.getRange(rowIndex, 3, 1, 4).setValues([[
-          data.level,
-          data.xp,
-          data.score,
+          newLevel,
+          newXP,
+          newScore,
           data.lastUpdated
         ]]);
-        // Optionally update Timestamp to reflect latest play, or keep original creation date?
-        // Let's keep original creation date, but update LastUpdated column.
-        return ContentService.createTextOutput(JSON.stringify({ status: 'updated', row: rowIndex }))
+        return ContentService.createTextOutput(JSON.stringify({ status: 'updated', row: rowIndex, level: newLevel }))
           .setMimeType(ContentService.MimeType.JSON);
       } else {
         // Append new row
         sheet.appendRow([
           timestamp,
           username,
-          data.level,
-          data.xp,
-          data.score,
+          Number(data.level) || 1,
+          Number(data.xp) || 0,
+          Number(data.score) || 0,
           data.lastUpdated
         ]);
         return ContentService.createTextOutput(JSON.stringify({ status: 'created' }))
@@ -91,9 +102,9 @@ function doGet(e) {
           const userData = {
             status: 'success',
             username: data[i][1],
-            level: data[i][2], // Max Level reached
-            xp: data[i][3],
-            score: data[i][4]
+            level: Number(data[i][2]) || 1, // Ensure number
+            xp: Number(data[i][3]) || 0,
+            score: Number(data[i][4]) || 0
           };
           return ContentService.createTextOutput(JSON.stringify(userData))
             .setMimeType(ContentService.MimeType.JSON);
