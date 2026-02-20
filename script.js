@@ -9,7 +9,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const LINE_SPACING = 30;
-const GROUP_SPACING = 100;
+const GROUP_SPACING = 250; // Increased from 100 to 250 to ensure separation
 
 // Bright Palette
 const COLORS = {
