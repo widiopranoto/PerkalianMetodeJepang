@@ -6,7 +6,19 @@
     <title>Game Perkalian Metode Garis (Bright Edition)</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+
+    <!-- Critical CSS Fallback (Before External CSS so External wins) -->
+    <style>
+        .hidden { display: none !important; }
+        body { margin: 0; font-family: sans-serif; }
+        /* Basic layout to prevent collapse if CSS fails */
+        #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        #login-overlay.hidden { display: none !important; }
+        .login-card { background: white; padding: 20px; border-radius: 8px; text-align: center; }
+    </style>
+
+    <!-- Main CSS with Cache Busting -->
+    <link rel="stylesheet" href="./style.css?v=3">
 </head>
 <body>
 
@@ -125,6 +137,7 @@
         <p>Dibuat dengan ❤️ untuk belajar matematika.</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- Script with Cache Busting -->
+    <script src="./script.js?v=3"></script>
 </body>
 </html>
