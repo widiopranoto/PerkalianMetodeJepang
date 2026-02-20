@@ -1,3 +1,10 @@
+// --- DEBUGGING ---
+console.log("Script loaded successfully! v2.0");
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
+    return false;
+};
+
 // --- CONFIGURATION ---
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -18,14 +25,14 @@ const COLORS = {
 };
 
 // Google Apps Script URL (Placeholder - User must replace this)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzb_rUHltmsKfp5iTkP4kxPZRre9kUEZPO46zxeWvBKL_l-VUffFuGOXEvsOtKzU445/exec'; // TODO: Paste your Web App URL here
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx45xm9zF-DWwmP6CF6cgt17sd7VuabR8jaNcgWSBQ0QmSHTh6NTgcpCk0RRAEvZEwh/exec'; // TODO: Paste your Web App URL here
 
 // Sound Effects
 const SOUNDS = {
-    start: new Audio('sounds/start.wav'),
-    correct: new Audio('sounds/chime.wav'),
-    wrong: new Audio('sounds/alert.wav'),
-    levelUp: new Audio('sounds/end.wav')
+    start: new Audio('./sounds/start.wav'),
+    correct: new Audio('./sounds/chime.wav'),
+    wrong: new Audio('./sounds/alert.wav'),
+    levelUp: new Audio('./sounds/end.wav')
 };
 
 // Level Configuration
@@ -107,14 +114,22 @@ const ctx = canvas.getContext('2d');
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    initEvents();
-    // Preload sounds
-    Object.values(SOUNDS).forEach(s => s.load());
+    console.log("DOM Loaded. Initializing events...");
+    try {
+        initEvents();
+        // Preload sounds
+        Object.values(SOUNDS).forEach(s => s.load());
+        console.log("Initialization complete.");
+    } catch (e) {
+        console.error("Initialization failed:", e);
+    }
 });
 
 function initEvents() {
     // Login
-    document.getElementById('btn-start-game').addEventListener('click', handleLogin);
+    const startBtn = document.getElementById('btn-start-game');
+    if(startBtn) startBtn.addEventListener('click', handleLogin);
+    else console.error("Start button not found!");
     
     // Navigation
     document.getElementById('btn-back-levels').addEventListener('click', showLevelSelection);
@@ -141,6 +156,7 @@ function initEvents() {
 // --- USER SYSTEM & NAVIGATION ---
 
 function handleLogin() {
+    console.log("handleLogin called");
     const input = document.getElementById('username-input');
     const username = input.value.trim() || 'Player';
     
@@ -149,7 +165,15 @@ function handleLogin() {
     // Update UI
     document.getElementById('hud-username').innerText = username;
     document.getElementById('avatar-initial').innerText = username.charAt(0).toUpperCase();
-    document.getElementById('login-overlay').classList.add('hidden');
+    
+    // Hide overlay
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.style.display = 'none'; // Force hide just in case
+    } else {
+        console.error("Login overlay not found!");
+    }
     
     playSound('start');
     
@@ -158,6 +182,7 @@ function handleLogin() {
 }
 
 function showLevelSelection() {
+    console.log("showLevelSelection called");
     // Hide Game, Show Level Select
     document.getElementById('game-interface').classList.add('hidden');
     document.getElementById('level-selection-screen').classList.remove('hidden');
@@ -167,6 +192,10 @@ function showLevelSelection() {
 
 function renderLevelMap() {
     const container = document.querySelector('#level-selection-screen .level-grid');
+    if (!container) {
+        console.error("Level grid container not found!");
+        return;
+    }
     container.innerHTML = ''; // Clear existing
     
     LEVEL_CONFIG.forEach(level => {
@@ -199,6 +228,7 @@ function renderLevelMap() {
 }
 
 function selectLevel(levelId) {
+    console.log("Level selected:", levelId);
     gameState.currentLevelId = levelId;
     
     // Hide Level Select, Show Game
@@ -282,6 +312,7 @@ function saveData() {
 // --- GAME LOGIC ---
 
 function setMode(mode) {
+    console.log("Setting mode:", mode);
     gameState.mode = mode;
     
     // UI Styling update
