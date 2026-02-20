@@ -1,5 +1,5 @@
 // --- DEBUGGING ---
-console.log("Script loaded successfully! v2.0");
+console.log("Script loaded successfully! v2.1");
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
     return false;
@@ -8,8 +8,8 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 // --- CONFIGURATION ---
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
-const LINE_SPACING = 30;
-const GROUP_SPACING = 250; // Increased from 100 to 250 to ensure separation
+const LINE_SPACING = 25; // Decreased from 30 to make groups more compact
+const GROUP_SPACING = 400; // Increased from 250 to 400 for maximum separation
 
 // Bright Palette
 const COLORS = {
