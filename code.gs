@@ -1,71 +1,114 @@
-// -----------------------------------------------------------------------------
-// Google Apps Script Code for "Game Perkalian Metode Jepang/Garis"
-// -----------------------------------------------------------------------------
-//
-// INSTRUCTIONS FOR DEPLOYMENT:
-// 1. Go to https://script.google.com/
-// 2. Click "New Project".
-// 3. Delete any code in the editor and paste this entire code.
-// 4. Update the SHEET_ID variable below with the ID from your Google Sheet URL.
-//    (The ID is the long string between /d/ and /edit in the URL).
-//    Example: '1QbzGmIEO5UAJZ7vNFDFAgTsYzByy2nvRAbeA9FkoUxg'
-// 5. Click "Deploy" > "New deployment".
-// 6. Select "Web app" as the type.
-// 7. Set "Description" to "Game Data Logger".
-// 8. Set "Execute as" to "Me".
-// 9. Set "Who has access" to "Anyone". (This is important for the game to work without login)
-// 10. Click "Deploy".
-// 11. Copy the "Web App URL" provided.
-// 12. Paste this URL into the `script.js` file of your game where indicated.
-//
-// -----------------------------------------------------------------------------
 
-const SHEET_ID = '1QbzGmIEO5UAJZ7vNFDFAgTsYzByy2nvRAbeA9FkoUxg'; // Updated with your Sheet ID
-const SHEET_NAME = 'Sheet1'; // Make sure this matches your sheet tab name
+// Configuration
+const SHEET_ID = '1QbzGmIEO5UAJZ7vNFDFAgTsYzByy2nvRAbeA9FkoUxg'; // Replace with your ID if different
+const SHEET_NAME = 'Sheet1';
 
 function doPost(e) {
   try {
-    // 1. Parse the incoming JSON data
     const data = JSON.parse(e.postData.contents);
-
-    // 2. Get the spreadsheet and sheet
     const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0]; // Fallback to first sheet
+    const sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
 
-    // 3. Prepare the row data
-    // Expected format: timestamp, username, level, xp, score, lastUpdated
-    const timestamp = new Date();
-    const rowData = [
-      timestamp,           // Column A: Timestamp
-      data.username,       // Column B: Username
-      data.level,          // Column C: Level
-      data.xp,             // Column D: XP
-      data.score,          // Column E: Score
-      data.lastUpdated     // Column F: Last Updated (Client timestamp)
-    ];
+    // Headers if not exist
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Timestamp', 'Username', 'Level', 'XP', 'Score', 'LastUpdated']);
+    }
 
-    // 4. Append the row
-    sheet.appendRow(rowData);
+    const username = data.username.trim();
+    if (!username) return ContentService.createTextOutput("Invalid Username");
 
-    // 5. Return success response
-    return ContentService.createTextOutput(JSON.stringify({
-      'result': 'success',
-      'row': rowData
-    })).setMimeType(ContentService.MimeType.JSON);
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
 
+    try {
+      const existingData = sheet.getDataRange().getValues();
+      let rowIndex = -1;
+
+      // Search for username (skip header)
+      for (let i = 1; i < existingData.length; i++) {
+        if (existingData[i][1] === username) {
+          rowIndex = i + 1; // 1-based index
+          break;
+        }
+      }
+
+      const timestamp = new Date();
+
+      if (rowIndex > 0) {
+        // Update existing row (Level, XP, Score, LastUpdated)
+        sheet.getRange(rowIndex, 3, 1, 4).setValues([[
+          data.level,
+          data.xp,
+          data.score,
+          data.lastUpdated
+        ]]);
+        // Optionally update Timestamp to reflect latest play, or keep original creation date?
+        // Let's keep original creation date, but update LastUpdated column.
+        return ContentService.createTextOutput(JSON.stringify({ status: 'updated', row: rowIndex }))
+          .setMimeType(ContentService.MimeType.JSON);
+      } else {
+        // Append new row
+        sheet.appendRow([
+          timestamp,
+          username,
+          data.level,
+          data.xp,
+          data.score,
+          data.lastUpdated
+        ]);
+        return ContentService.createTextOutput(JSON.stringify({ status: 'created' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+    } finally {
+      lock.releaseLock();
+    }
   } catch (error) {
-    // Return error response
-    return ContentService.createTextOutput(JSON.stringify({
-      'result': 'error',
-      'error': error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// Optional: Handle GET requests (e.g., to check if the script is running)
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    'status': 'active',
-    'message': 'Game Data Logger is running. Please use POST to send data.'
-  })).setMimeType(ContentService.MimeType.JSON);
+  try {
+    const action = e.parameter.action;
+    const username = e.parameter.username;
+
+    if (action === 'login' && username) {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const sheet = ss.getSheetByName(SHEET_NAME);
+
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({ status: 'not_found' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const data = sheet.getDataRange().getValues();
+      // Search for username (skip header)
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][1] === username) {
+          // Found user!
+          const userData = {
+            status: 'success',
+            username: data[i][1],
+            level: data[i][2], // Max Level reached
+            xp: data[i][3],
+            score: data[i][4]
+          };
+          return ContentService.createTextOutput(JSON.stringify(userData))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ status: 'not_found' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ status: 'invalid_request' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }

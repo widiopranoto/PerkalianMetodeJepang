@@ -1,5 +1,5 @@
 // --- DEBUGGING ---
-console.log("Script loaded successfully! v2.2 - Grid Layout");
+console.log("Script loaded successfully! v2.3 - Persistence");
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
     return false;
@@ -145,10 +145,27 @@ function initEvents() {
 
 // --- USER SYSTEM & NAVIGATION ---
 
-function handleLogin() {
+async function handleLogin() {
     const input = document.getElementById('username-input');
+    const startBtn = document.getElementById('btn-start-game');
     const username = input.value.trim() || 'Player';
     gameState.user.username = username;
+
+    // UI Loading state
+    startBtn.disabled = true;
+    startBtn.innerText = "Loading...";
+
+    try {
+        // Fetch User Data if GAS_URL is configured
+        if (GAS_URL) {
+            await fetchUserData(username);
+        }
+    } catch (e) {
+        console.error("Failed to fetch user data:", e);
+    } finally {
+        startBtn.disabled = false;
+        startBtn.innerText = "Mulai!";
+    }
 
     document.getElementById('hud-username').innerText = username;
     document.getElementById('avatar-initial').innerText = username.charAt(0).toUpperCase();
@@ -157,7 +174,44 @@ function handleLogin() {
     document.getElementById('login-overlay').style.display = 'none';
 
     playSound('start');
+
+    // Update HUD with loaded data
+    updateHUD();
+
     showLevelSelection();
+}
+
+async function fetchUserData(username) {
+    console.log("Fetching user data for:", username);
+    try {
+        const response = await fetch(`${GAS_URL}?action=login&username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            mode: 'cors', // Standard CORS request
+            redirect: 'follow'
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const data = await response.json();
+        console.log("User data received:", data);
+
+        if (data.status === 'success') {
+            // Update local state
+            gameState.user.xp = Number(data.xp) || 0;
+            gameState.user.score = Number(data.score) || 0;
+            const maxLevel = Number(data.level) || 1;
+
+            // Rebuild unlocked levels array [1, 2, ..., maxLevel]
+            gameState.user.unlockedLevels = [];
+            for (let i = 1; i <= maxLevel; i++) {
+                if (LEVEL_CONFIG.find(l => l.id === i)) {
+                    gameState.user.unlockedLevels.push(i);
+                }
+            }
+        }
+    } catch (error) {
+        console.warn("Could not load user data (Offline or new user):", error);
+    }
 }
 
 function showLevelSelection() {
