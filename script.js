@@ -25,7 +25,7 @@ const COLORS = {
 };
 
 // Google Apps Script URL (Placeholder - User must replace this)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwiaQTdFzj6KdJLMGS32L6WyYAHVCkBT4K0hp-btqxcSHdmPl_8NB5vabTxhLV9UGtO/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxcyGwfN61LUpAC_AYWYm5WN61eHmkyVM9faQZdSwCQleD_3xANhBKWQC1eYj5abOOi/exec'; 
 
 // Sound Effects
 const SOUNDS = {
